@@ -1,0 +1,11 @@
+version: "3.8"
+services:
+  backup-manager:
+    build: .
+    container_name: backup_manager
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./dumps:/app/dumps
+      - ./backup_manager.db:/app/backup_manager.db
+    restart: unless-stopped

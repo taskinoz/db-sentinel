@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Add Database</title>
+</head>
+
+<body>
+    <h1>Add New Database</h1>
+    <form action="/add" method="POST">
+        <label>Name: <input type="text" name="name" required></label><br>
+        <label>Type:
+            <select name="type" required>
+                <option value="postgres">Postgres</option>
+                <option value="mysql">MySQL</option>
+            </select>
+        </label><br>
+        <label>Host: <input type="text" name="host" required></label><br>
+        <label>Port: <input type="number" name="port" required></label><br>
+        <label>Username: <input type="text" name="username" required></label><br>
+        <label>Password: <input type="password" name="password" required></label><br>
+        <label>Database Name: <input type="text" name="database_name" required></label><br>
+        <button type="submit">Add</button>
+    </form>
+</body>
+
+</html>

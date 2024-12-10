@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Backup Manager</title>
+</head>
+
+<body>
+    <h1>Database Backup Manager</h1>
+    <a href="/add">Add New Database</a>
+    <table border="1">
+        <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Database</th>
+            <th>Last Backup</th>
+            <th>Total Size (Bytes)</th>
+        </tr>
+        <% data.forEach(row=> { %>
+            <tr>
+                <td>
+                    <%= row.name %>
+                </td>
+                <td>
+                    <%= row.type %>
+                </td>
+                <td>
+                    <%= row.database_name %>
+                </td>
+                <td>
+                    <%= row.last_backup || 'Never' %>
+                </td>
+                <td>
+                    <%= row.total_size || 0 %>
+                </td>
+            </tr>
+            <% }); %>
+    </table>
+</body>
+
+</html>
