@@ -78,8 +78,8 @@ const backupDatabase = (credential) => {
     }
 };
 
-// Schedule backups (runs every minute)
-cron.schedule('* * * * *', () => {
+// Schedule backups (runs daily at 2 AM)
+cron.schedule('0 2 * * *', () => {
     try {
         const credentials = db.prepare(`SELECT * FROM credentials`).all();
         credentials.forEach(backupDatabase);

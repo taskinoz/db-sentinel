@@ -1,10 +1,14 @@
 # Base image
 FROM node:18
 
-# Install PostgreSQL and MySQL client utilities
+# Install PostgreSQL client for the desired version
 RUN apt-get update && apt-get install -y \
-    postgresql-client \
-    default-mysql-client \
+    wget \
+    gnupg \
+    && wget -qO - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - \
+    && echo "deb http://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
+    && apt-get update \
+    && apt-get install -y postgresql-client-16 default-mysql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory
