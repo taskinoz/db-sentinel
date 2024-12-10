@@ -1,18 +1,29 @@
 # Base image
 FROM node:18
 
-# Set the working directory inside the container
+# Install PostgreSQL and MySQL client utilities
+RUN apt-get update && apt-get install -y \
+    postgresql-client \
+    default-mysql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set the working directory
 WORKDIR /app
 
-# Copy application files
+# Copy package.json and package-lock.json
 COPY package*.json ./
-COPY . .
 
 # Install dependencies
 RUN npm install
 
+# Copy application files
+COPY . .
+
+# Ensure the dumps directory exists
+RUN mkdir -p /app/dumps
+
 # Expose the application port
 EXPOSE 3000
 
-# Run the application
+# Start the application
 CMD ["node", "app.js"]
