@@ -57,22 +57,24 @@ const backupDatabase = (credential) => {
 
     let cmd;
     if (type === 'postgres') {
-        cmd = `PGPASSWORD='${password}' pg_dump -h ${host} -p ${port} -U ${username} ${database_name} > ${backupFile}`;
+        cmd = `PGPASSWORD='${password}' pg_dump -h ${host} -p ${port} -U ${username} ${database_name}`;
     } else if (type === 'mysql') {
-        cmd = `mysqldump -h ${host} -P ${port} -u ${username} -p${password} ${database_name} > ${backupFile}`;
+        cmd = `mysqldump -h ${host} -P ${port} -u ${username} -p${password} ${database_name}`;
     }
 
     if (cmd) {
-        exec(cmd, (error) => {
+        exec(cmd, { maxBuffer: 1024 * 500 }, (error, stdout) => {
             if (error) {
                 console.error(`Backup failed for ${database_name}: ${error.message}`);
-            } else {
+                return;
+            }
+            // Check if the dump has content
+            if (stdout.trim()) {
+                fs.writeFileSync(backupFile, stdout);
                 const size = fs.statSync(backupFile).size;
-                try {
-                    db.prepare(`INSERT INTO backup_logs (credential_id, backup_size) VALUES (?, ?)`).run(id, size);
-                } catch (err) {
-                    console.error(`Error logging backup: ${err.message}`);
-                }
+                db.prepare(`INSERT INTO backup_logs (credential_id, backup_size) VALUES (?, ?)`).run(id, size);
+            } else {
+                console.error(`No data found in ${database_name}, skipping file creation.`);
             }
         });
     }
@@ -99,7 +101,17 @@ app.get('/', (req, res) => {
             LEFT JOIN backup_logs b ON c.id = b.credential_id
             GROUP BY c.id
         `).all();
-        res.render('index', { data });
+
+        // Gather backups for each database
+        const backups = {};
+        const files = fs.readdirSync(dumpsDir); // Read all files in the dumps directory
+        data.forEach((row) => {
+            backups[row.database_name] = files
+                .filter(file => file.startsWith(`${row.database_name}_`)) // Match files for the database
+                .map(file => file.replace(`${row.database_name}_`, '').replace('.sql', '')); // Extract the date part
+        });
+
+        res.render('index', { data, backups });
     } catch (error) {
         res.status(500).send(`Error fetching data: ${error.message}`);
     }
@@ -110,16 +122,73 @@ app.get('/add', (req, res) => {
 });
 
 app.post('/add', (req, res) => {
-    const { name, type, host, port, username, password, database_name } = req.body;
+    const { name, type, host, port, username, password, database_name, connection_url } = req.body;
     try {
-        db.prepare(`
-            INSERT INTO credentials (name, type, host, port, username, password, database_name) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        `).run(name, type, host, port, username, password, database_name);
+        if (connection_url) {
+            const parsed = new URL(connection_url);
+            db.prepare(`
+                INSERT INTO credentials (name, type, host, port, username, password, database_name) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            `).run(name, parsed.protocol.replace(':', ''), parsed.hostname, parsed.port || 5432, parsed.username, parsed.password, parsed.pathname.replace('/', ''));
+        } else {
+            db.prepare(`
+                INSERT INTO credentials (name, type, host, port, username, password, database_name) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            `).run(name, type, host, port, username, password, database_name);
+        }
         res.redirect('/');
     } catch (error) {
         res.status(500).send(`Error adding database: ${error.message}`);
     }
+});
+
+
+app.post('/download', (req, res) => {
+    const { db_name, date } = req.body;
+    const filePath = path.join(dumpsDir, `${db_name}_${date}.sql`);
+    if (fs.existsSync(filePath)) {
+        res.download(filePath);
+    } else {
+        res.status(404).send('Backup not found');
+    }
+});
+
+app.post('/backup-now', (req, res) => {
+    const { db_name } = req.body;
+    const credential = db.prepare('SELECT * FROM credentials WHERE database_name = ?').get(db_name);
+    if (!credential) {
+        return res.status(404).send('Database credential not found');
+    }
+    backupDatabase(credential);
+    res.send('Backup started');
+});
+
+app.post('/restore', (req, res) => {
+    const { db_name, date } = req.body;
+    const filePath = path.join(dumpsDir, `${db_name}_${date}.sql`);
+    if (!fs.existsSync(filePath)) {
+        return res.status(404).send('Backup file not found');
+    }
+
+    const credential = db.prepare('SELECT * FROM credentials WHERE database_name = ?').get(db_name);
+    if (!credential) {
+        return res.status(404).send('Database credential not found');
+    }
+
+    let cmd;
+    if (credential.type === 'postgres') {
+        cmd = `PGPASSWORD='${credential.password}' psql -h ${credential.host} -p ${credential.port} -U ${credential.username} -d ${credential.database_name} < ${filePath}`;
+    } else if (credential.type === 'mysql') {
+        cmd = `mysql -h ${credential.host} -P ${credential.port} -u ${credential.username} -p${credential.password} ${credential.database_name} < ${filePath}`;
+    }
+
+    exec(cmd, (error) => {
+        if (error) {
+            console.error(`Restore failed for ${db_name}: ${error.message}`);
+            return res.status(500).send('Restore failed');
+        }
+        res.send('Restore successful');
+    });
 });
 
 // Start the server

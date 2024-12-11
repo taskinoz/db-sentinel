@@ -1,27 +1,68 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add Database</title>
+    <link href="/output.css" rel="stylesheet">
 </head>
 
-<body>
-    <h1>Add New Database</h1>
-    <form action="/add" method="POST">
-        <label>Name: <input type="text" name="name" required></label><br>
-        <label>Type:
-            <select name="type" required>
-                <option value="postgres">Postgres</option>
-                <option value="mysql">MySQL</option>
-            </select>
-        </label><br>
-        <label>Host: <input type="text" name="host" required></label><br>
-        <label>Port: <input type="number" name="port" required></label><br>
-        <label>Username: <input type="text" name="username" required></label><br>
-        <label>Password: <input type="password" name="password" required></label><br>
-        <label>Database Name: <input type="text" name="database_name" required></label><br>
-        <button type="submit">Add</button>
-    </form>
+<body class="bg-gray-100 min-h-screen font-sans">
+    <div class="container mx-auto p-6">
+        <h1 class="text-3xl font-bold text-blue-600 mb-6">Add New Database</h1>
+        <form method="POST" class="bg-white shadow-lg rounded p-6 space-y-4">
+            <div>
+                <label class="block text-gray-700">Use Connection URL:</label>
+                <input type="checkbox" id="use_url" onchange="toggleConnectionFields()" class="border p-2 rounded">
+            </div>
+            <div id="url_field" style="display: none;">
+                <label class="block text-gray-700">Connection URL:</label>
+                <input type="text" name="connection_url" class="w-full border p-2 rounded">
+            </div>
+            <div>
+                <label class="block text-gray-700">Name:</label>
+                <input type="text" name="name" required class="w-full border p-2 rounded">
+            </div>
+            <div>
+                <label class="block text-gray-700">Type:</label>
+                <select name="type" required class="w-full border p-2 rounded">
+                    <option value="postgres">Postgres</option>
+                    <option value="mysql">MySQL</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-gray-700">Host:</label>
+                <input type="text" name="host" required class="w-full border p-2 rounded">
+            </div>
+            <div>
+                <label class="block text-gray-700">Port:</label>
+                <input type="number" name="port" required class="w-full border p-2 rounded">
+            </div>
+            <div>
+                <label class="block text-gray-700">Username:</label>
+                <input type="text" name="username" required class="w-full border p-2 rounded">
+            </div>
+            <div>
+                <label class="block text-gray-700">Password:</label>
+                <input type="password" name="password" required class="w-full border p-2 rounded">
+            </div>
+            <div>
+                <label class="block text-gray-700">Database Name:</label>
+                <input type="text" name="database_name" required class="w-full border p-2 rounded">
+            </div>
+            <div>
+                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded">Add</button>
+            </div>
+        </form>
+        <script>
+            function toggleConnectionFields() {
+                const useUrl = document.getElementById('use_url').checked;
+                document.getElementById('url_field').style.display = useUrl ? 'block' : 'none';
+                document.getElementById('detailed_fields').style.display = useUrl ? 'none' : 'block';
+            }
+        </script>
+    </div>
 </body>
 
 </html>

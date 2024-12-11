@@ -1,41 +1,86 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <title>Backup Manager</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DB Sentinel</title>
+    <link href="/output.css" rel="stylesheet">
 </head>
 
-<body>
-    <h1>Database Backup Manager</h1>
-    <a href="/add">Add New Database</a>
-    <table border="1">
-        <tr>
-            <th>Name</th>
-            <th>Type</th>
-            <th>Database</th>
-            <th>Last Backup</th>
-            <th>Total Size (Bytes)</th>
-        </tr>
-        <% data.forEach(row=> { %>
-            <tr>
-                <td>
-                    <%= row.name %>
-                </td>
-                <td>
-                    <%= row.type %>
-                </td>
-                <td>
-                    <%= row.database_name %>
-                </td>
-                <td>
-                    <%= row.last_backup || 'Never' %>
-                </td>
-                <td>
-                    <%= row.total_size || 0 %>
-                </td>
-            </tr>
-            <% }); %>
-    </table>
+<body class="bg-gray-100 min-h-screen font-sans">
+    <div class="container mx-auto p-6">
+        <h1 class="text-3xl font-bold text-blue-600 mb-6">Database Backup Manager</h1>
+        <a href="/add" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded mb-4 inline-block">Add New
+            Database</a>
+        <table class="w-full border-collapse bg-white shadow-lg rounded">
+            <thead class="bg-blue-500 text-white">
+                <tr>
+                    <th class="border p-4 text-left">Name</th>
+                    <th class="border p-4 text-left">Type</th>
+                    <th class="border p-4 text-left">Database</th>
+                    <th class="border p-4 text-left">Last Backup</th>
+                    <th class="border p-4 text-left">Total Size (Bytes)</th>
+                    <th class="border p-4 text-left">Actions</th>
+                    <th class="border p-4 text-left">Restore</th>
+                    <th class="border p-4 text-left">Backup Now</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% data.forEach(row=> { %>
+                    <tr class="hover:bg-gray-100">
+                        <td class="border p-4">
+                            <%= row.name %>
+                        </td>
+                        <td class="border p-4">
+                            <%= row.type %>
+                        </td>
+                        <td class="border p-4">
+                            <%= row.database_name %>
+                        </td>
+                        <td class="border p-4">
+                            <%= row.last_backup || 'Never' %>
+                        </td>
+                        <td class="border p-4">
+                            <%= row.total_size || 0 %>
+                        </td>
+                        <td class="border p-4">
+                            <form action="/download" method="POST">
+                                <input type="hidden" name="db_name" value="<%= row.database_name %>">
+                                <select name="date" class="border p-2 rounded">
+                                    <% backups[row.database_name]?.forEach(backup=> { %>
+                                        <option value="<%= backup %>">
+                                            <%= backup %>
+                                        </option>
+                                        <% }); %>
+                                </select>
+                                <button type="submit" class="bg-green-500 hover:bg-green-600 text-white py-1 px-3 rounded">Download</button>
+                            </form>
+                        </td>
+                        <td class="border p-4">
+                            <form action="/restore" method="POST">
+                                <input type="hidden" name="db_name" value="<%= row.database_name %>">
+                                <select name="date" class="border p-2 rounded">
+                                    <% backups[row.database_name]?.forEach(backup=> { %>
+                                        <option value="<%= backup %>">
+                                            <%= backup %>
+                                        </option>
+                                        <% }); %>
+                                </select>
+                                <button type="submit" class="bg-red-500 hover:bg-red-600 text-white py-1 px-3 rounded">Restore</button>
+                            </form>
+                        </td>
+                        <td class="border p-4">
+                            <form action="/backup-now" method="POST">
+                                <input type="hidden" name="db_name" value="<%= row.database_name %>">
+                                <button type="submit" class="bg-blue-500 hover:bg-blue-600 text-white py-1 px-3 rounded">Backup Now</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <% }); %>
+            </tbody>
+        </table>
+    </div>
 </body>
 
 </html>
